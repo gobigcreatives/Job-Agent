@@ -1,0 +1,72 @@
+# Domain policy for application URLs. This file IS version-controlled
+# (unlike profile.yaml/preferences.yaml) because it's a safety control, not a
+# personal preference — changes to it should show up in code review.
+#
+# blocked: the agent will never open or submit an application on these
+#   domains, no matter how good the match. LinkedIn and Indeed are
+#   permanently blocked per product requirement — do not remove them.
+# allowed: known-good ATS platforms and job sources the agent may apply
+#   through directly once a listing resolves to one of these domains.
+# manual_review: domains that look plausible but aren't pre-approved; the
+#   agent stops and asks before applying through one of these.
+# default_policy: what happens to a domain that appears in none of the
+#   lists above. "manual_review" is the safe default — new/unknown domains
+#   never get silently auto-applied to.
+
+blocked:
+  - linkedin.com
+  - indeed.com
+  - indeed.co.uk
+  - indeed.fr
+  - indeed.de
+
+allowed:
+  # Major ATS platforms — these are where "apply through the official
+  # company system" usually actually lands.
+  - boards.greenhouse.io
+  - greenhouse.io
+  - jobs.lever.co
+  - lever.co
+  - myworkdayjobs.com
+  - bamboohr.com
+  - ashbyhq.com
+  - jobs.ashbyhq.com
+  - smartrecruiters.com
+  - apply.workable.com
+  - workable.com
+  - jobvite.com
+  - icims.com
+  - taleo.net
+  - breezy.hr
+  - personio.com
+  - personio.de
+  - recruitee.com
+  - teamtailor.com
+  - workday.com
+  - successfactors.com
+  - oraclecloud.com
+  - jazzhr.com
+  - applytojob.com
+  - freshteam.com
+  - polymer.co
+  - join.com
+
+manual_review:
+  - glassdoor.com
+  - glassdoor.co.uk
+  - ziprecruiter.com
+  - totaljobs.com
+  - reed.co.uk
+  - cv-library.co.uk
+  - monster.co.uk
+  - monster.com
+  - simplyhired.com
+  - adzuna.co.uk
+  - jobsite.co.uk
+  - milkround.com
+  - angel.co
+  - wellfound.com
+  - otta.com
+  - welcometothejungle.com
+
+default_policy: manual_review

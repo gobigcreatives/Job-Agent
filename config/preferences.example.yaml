@@ -1,0 +1,93 @@
+# Job search preferences — what you're looking for. Copy to preferences.yaml
+# and edit freely; nothing here requires touching application code.
+
+target_roles:
+  - "Social Media Manager"
+  - "Social Media Executive"
+  - "Social Media Strategist"
+  - "Content Manager"
+  - "Paid Social Manager"
+
+locations:
+  - "London"
+  - "UK"
+  - "Remote UK"
+
+remote:
+  # Any of: remote, hybrid, office
+  accepted:
+    - remote
+    - hybrid
+    - office
+
+employment_types:
+  - full_time
+  - freelance
+  - contract
+
+salary:
+  minimum: 35000
+  currency: GBP
+  period: annual
+
+experience:
+  min_years: 3
+  max_years: 8
+
+industries:
+  - Marketing & Advertising
+  - Retail
+  - E-commerce
+  - Tech / SaaS
+
+excluded_companies: []
+
+excluded_roles:
+  - "Sales Executive"
+  - "Recruitment Consultant"
+  - "Business Development"
+
+# Weighted scoring — must sum to 1.0 (the loader will reject configs that
+# don't). See README for what each factor measures.
+scoring:
+  weights:
+    skills_match: 0.30
+    experience_match: 0.25
+    role_match: 0.20
+    location_match: 0.10
+    industry_match: 0.05
+    salary_match: 0.05
+    preferences_match: 0.05
+  bands:
+    excellent: 90
+    strong: 80
+    potential: 70
+    # anything below "potential" is Skip
+  # Only jobs scoring at or above this are auto-applied to. Jobs between
+  # bands.potential and this threshold are recorded as "potential matches"
+  # for manual review but not auto-applied.
+  auto_apply_min_score: 80
+
+limits:
+  max_applications_per_day: 15
+  max_applications_per_hour: 5
+  max_applications_per_company: 2
+  min_match_score: 70
+
+search:
+  # Upper bound on distinct Google queries issued per run — keeps traffic
+  # reasonable regardless of how many role/location combinations exist.
+  max_queries_per_run: 20
+  max_results_per_query: 10
+  # Identical queries aren't re-issued to Google within this window; cached
+  # results are reused instead.
+  cache_ttl_hours: 12
+  # Minimum delay between outbound search requests.
+  request_delay_seconds: 2
+
+schedule:
+  # One of: manual, hourly, every_6_hours, daily_morning
+  frequency: "every_6_hours"
+  # Used only when frequency is daily_morning.
+  run_time: "08:00"
+  timezone: "Europe/London"

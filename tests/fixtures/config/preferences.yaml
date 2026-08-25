@@ -1,0 +1,71 @@
+target_roles:
+  - "Social Media Manager"
+  - "Content Manager"
+  - "Paid Social Manager"
+
+locations:
+  - "London"
+  - "UK"
+  - "Remote UK"
+
+remote:
+  accepted:
+    - remote
+    - hybrid
+    - office
+
+employment_types:
+  - full_time
+  - contract
+
+salary:
+  minimum: 35000
+  currency: GBP
+  period: annual
+
+experience:
+  min_years: 3
+  max_years: 8
+
+industries:
+  - Marketing & Advertising
+  - E-commerce
+
+excluded_companies:
+  - "Bad Co"
+
+excluded_roles:
+  - "Sales Executive"
+  - "Recruitment Consultant"
+
+scoring:
+  weights:
+    skills_match: 0.30
+    experience_match: 0.25
+    role_match: 0.20
+    location_match: 0.10
+    industry_match: 0.05
+    salary_match: 0.05
+    preferences_match: 0.05
+  bands:
+    excellent: 90
+    strong: 80
+    potential: 70
+  auto_apply_min_score: 80
+
+limits:
+  max_applications_per_day: 15
+  max_applications_per_hour: 5
+  max_applications_per_company: 2
+  min_match_score: 70
+
+search:
+  max_queries_per_run: 20
+  max_results_per_query: 10
+  cache_ttl_hours: 12
+  request_delay_seconds: 0
+
+schedule:
+  frequency: "every_6_hours"
+  run_time: "08:00"
+  timezone: "Europe/London"

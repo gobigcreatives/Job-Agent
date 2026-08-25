@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# runtime state — local to each user, never committed
+data/
+*.db
+*.sqlite3
+
+# secrets
+.env
+
+# local overrides of example configs
+config/profile.yaml
+config/preferences.yaml
+config/resume.md
+
+# generated application artifacts
+output/

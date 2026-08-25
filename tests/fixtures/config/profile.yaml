@@ -1,0 +1,29 @@
+candidate:
+  name: "Jamie Test"
+  email: "jamie@example.com"
+  phone: "+44 7000 000000"
+  location: "London, UK"
+  linkedin_url: "https://linkedin.com/in/jamietest"
+  portfolio_url: "https://jamietest.example.com"
+  work_authorization: "UK citizen, no sponsorship required"
+  resume_text_path: "resume.md"
+
+skills:
+  - Social media strategy
+  - Paid social (Meta Ads, TikTok Ads)
+  - Content creation
+  - Community management
+  - Analytics & reporting
+
+experience_years: 5
+seniority: "Manager"
+
+industries:
+  - Marketing & Advertising
+  - E-commerce
+
+default_answers:
+  notice_period: "1 month"
+  willing_to_relocate: false
+  requires_sponsorship: false
+  referral_source: "Applied directly after finding the role via my own job search"

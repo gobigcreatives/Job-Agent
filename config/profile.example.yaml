@@ -1,0 +1,48 @@
+# Candidate profile — who you are. Copy this file to profile.yaml and fill it
+# in; profile.yaml is gitignored so your personal details never get committed.
+candidate:
+  name: "Your Name"
+  email: "you@example.com"
+  phone: "+44 7000 000000"
+  location: "London, UK"
+  linkedin_url: ""
+  portfolio_url: ""
+  # Free text describing right-to-work status. Used to auto-answer the
+  # "are you legally authorised to work in X" question that almost every
+  # ATS asks, without stopping to ask you each time.
+  work_authorization: "UK citizen, no sponsorship required"
+  # Base resume the tailoring step starts from. Plain text/Markdown works
+  # best — the LLM reorganises and rewrites it per job, it doesn't need
+  # layout. Relative paths are resolved against the config directory
+  # (default: config/), not the current working directory.
+  resume_text_path: "resume.md"
+
+skills:
+  - Social media strategy
+  - Paid social (Meta Ads, TikTok Ads, LinkedIn Ads)
+  - Content creation & copywriting
+  - Community management
+  - Analytics & reporting
+  - Campaign management
+  - Influencer partnerships
+  - Adobe Creative Suite
+  - Canva
+  - SEO fundamentals
+
+experience_years: 5
+seniority: "Manager"  # one of: Junior, Mid, Senior, Manager, Head, Director
+
+industries:
+  - Marketing & Advertising
+  - Retail
+  - E-commerce
+  - Tech / SaaS
+
+# Reusable answers for common application questions. The agent only asks you
+# when a question doesn't map to one of these (or to a preferences.yaml
+# field) with reasonable confidence.
+default_answers:
+  notice_period: "1 month"
+  willing_to_relocate: false
+  requires_sponsorship: false
+  referral_source: "Applied directly after finding the role via my own job search"
