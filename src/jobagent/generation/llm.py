@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 
 _DEFAULT_MODELS = {
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.6-flash",
     "anthropic": "claude-sonnet-5",
 }
 
@@ -63,7 +63,18 @@ class LLMClient:
         if self.provider == "gemini":
             from google import genai
 
-            self._client = genai.Client(api_key=self.api_key)
+            # The google-genai SDK checks its own GOOGLE_API_KEY/GEMINI_API_KEY
+            # env vars ahead of an explicitly-passed api_key. GOOGLE_API_KEY is
+            # also this project's Google Custom Search key, so if both are set
+            # in the environment the SDK would silently authenticate Gemini
+            # calls with the wrong (search) key. Shield the constructor call
+            # from that env var so our explicit api_key always wins.
+            previous = os.environ.pop("GOOGLE_API_KEY", None)
+            try:
+                self._client = genai.Client(api_key=self.api_key)
+            finally:
+                if previous is not None:
+                    os.environ["GOOGLE_API_KEY"] = previous
         else:
             from anthropic import Anthropic
 
