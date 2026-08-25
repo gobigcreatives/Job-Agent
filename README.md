@@ -56,11 +56,19 @@ refuses to start if either is removed from the blocked list.
 
 | Variable | Used for | Required for |
 |---|---|---|
-| `GOOGLE_API_KEY`, `GOOGLE_CSE_ID` | Google Programmable Search Engine (Custom Search JSON API) | discovery |
+| `SERPER_API_KEY` **or** `GOOGLE_API_KEY`+`GOOGLE_CSE_ID` | Google Job Search discovery | discovery |
 | `GEMINI_API_KEY` **or** `ANTHROPIC_API_KEY` | CV tailoring, cover letters, open-ended question answers | applying |
 | `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD`/`SMTP_FROM_EMAIL` | emailing a hiring contact directly, when a listing asks for that instead of a form | the rare email-apply path |
 
-**Google Search setup** — two separate things, both free:
+**Search setup — recommended path.** Use [serper.dev](https://serper.dev):
+sign in, an API key is issued instantly (no "enable this API" step, no
+Google Cloud project/billing setup), 2,500 free searches. Set
+`SERPER_API_KEY`.
+
+**Alternative: Google Custom Search JSON API directly.** Official and free
+for 100 queries/day, but goes through Google Cloud Console's project/API-
+enablement/billing flow, which can be genuinely finicky to get working on
+the first try even doing everything by the book:
 1. Create a search engine at https://programmablesearchengine.google.com/
    and turn its **"Search the entire web"** control ON (not restricted to
    specific sites — restricting it defeats the point of discovering
@@ -71,9 +79,9 @@ refuses to start if either is removed from the blocked list.
    **"Select API restrictions"**, choose **Custom Search API** from the
    dropdown (search for it if it's not listed yet) and save — that's the
    only API this key needs access to. Copy the key into `GOOGLE_API_KEY`.
-   Free tier: 100 searches/day; beyond that it's billed per query, so this
-   is the one piece with a usage-based cost if you run a very high search
-   volume.
+   If it still 403s with "This project does not have the access to Custom
+   Search JSON API" after enabling the API and linking billing, use Serper
+   instead rather than keep fighting the Cloud Console.
 
 **LLM setup — no paid API required.** By default use **Gemini**, which is
 free with no credit card: get a key at https://aistudio.google.com/apikey

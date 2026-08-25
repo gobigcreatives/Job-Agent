@@ -56,9 +56,9 @@ def _cmd_init(args: argparse.Namespace) -> int:
 
 def _build_search_provider(config: AppConfig):
     from jobagent.search.cache import CachingSearchProvider, SearchCache
-    from jobagent.search.providers import GoogleCustomSearchProvider, RateLimitedProvider
+    from jobagent.search.providers import RateLimitedProvider, build_default_provider
 
-    base = RateLimitedProvider(GoogleCustomSearchProvider(), min_delay_seconds=config.preferences.search.request_delay_seconds)
+    base = RateLimitedProvider(build_default_provider(), min_delay_seconds=config.preferences.search.request_delay_seconds)
     cache = SearchCache(config.data_dir / "search_cache.db")
     return CachingSearchProvider(base, cache, ttl_hours=config.preferences.search.cache_ttl_hours)
 

@@ -1,11 +1,18 @@
-"""Search provider abstraction. The only implementation wired to a real
-network call is GoogleCustomSearchProvider, which uses the Google
-Programmable Search Engine (Custom Search JSON API) — the officially
-supported way to run Google searches programmatically without scraping
-google.com search result pages (scraping google.com directly breaks its
-terms of service and is unreliable; this project intentionally avoids it).
+"""Search provider abstraction. Two implementations are wired to a real
+network call, both accessing actual Google search results without scraping
+google.com search result pages directly (which breaks its terms of service
+and is unreliable):
 
-Set GOOGLE_API_KEY and GOOGLE_CSE_ID (see .env.example) to enable it.
+- GoogleCustomSearchProvider — the Google Programmable Search Engine
+  (Custom Search JSON API). Official, free for 100 queries/day, but setup
+  goes through Google Cloud Console (API enablement, project, sometimes
+  billing) which can be a maze for a first-time GCP user.
+- SerperSearchProvider — https://serper.dev, a third-party wrapper around
+  real Google search results. One API key, no cloud console, 2,500 free
+  queries. Recommended if the Google Cloud setup is giving you trouble.
+
+Set SERPER_API_KEY, or GOOGLE_API_KEY + GOOGLE_CSE_ID (see .env.example) —
+whichever is present is auto-detected by build_default_provider().
 """
 from __future__ import annotations
 
@@ -21,6 +28,7 @@ from jobagent.models import SearchResult
 logger = logging.getLogger(__name__)
 
 GOOGLE_CUSTOM_SEARCH_ENDPOINT = "https://www.googleapis.com/customsearch/v1"
+SERPER_SEARCH_ENDPOINT = "https://google.serper.dev/search"
 
 
 class SearchProviderError(RuntimeError):
@@ -88,6 +96,35 @@ class GoogleCustomSearchProvider(SearchProvider):
         return results[:num_results]
 
 
+class SerperSearchProvider(SearchProvider):
+    """Wraps serper.dev's Search API — a straightforward single-API-key
+    alternative to Google Custom Search JSON API for when Google Cloud
+    Console's project/billing/enablement setup is more friction than it's
+    worth. Get a key at https://serper.dev (sign in, key is issued
+    instantly, no "enable this API" step)."""
+
+    def __init__(self, api_key: str | None = None, session: requests.Session | None = None):
+        self.api_key = api_key or os.environ.get("SERPER_API_KEY")
+        if not self.api_key:
+            raise SearchProviderError("SERPER_API_KEY must be set (see .env.example) to use SerperSearchProvider.")
+        self.session = session or requests.Session()
+
+    def search(self, query: str, num_results: int = 10) -> list[SearchResult]:
+        headers = {"X-API-KEY": self.api_key, "Content-Type": "application/json"}
+        payload = {"q": query, "num": num_results}
+        response = self.session.post(SERPER_SEARCH_ENDPOINT, json=payload, headers=headers, timeout=15)
+        if response.status_code == 429:
+            raise SearchProviderError("Serper API rate limit hit (HTTP 429)")
+        if not response.ok:
+            raise SearchProviderError(f"Serper API error {response.status_code}: {response.text[:300]}")
+        data = response.json()
+        results = [
+            SearchResult(query=query, title=item.get("title", ""), url=item.get("link", ""), snippet=item.get("snippet", ""))
+            for item in data.get("organic", [])
+        ]
+        return results[:num_results]
+
+
 class StaticSearchProvider(SearchProvider):
     """Returns pre-seeded results. Used for tests and for dry-running the
     pipeline without API credentials — never wired in by default."""
@@ -116,3 +153,25 @@ class RateLimitedProvider(SearchProvider):
                 time.sleep(wait)
         self._last_call = time.monotonic()
         return self.inner.search(query, num_results)
+
+
+def build_default_provider(session: requests.Session | None = None) -> SearchProvider:
+    """Picks a search provider from whichever credentials are set in the
+    environment. Preference order: an explicit SEARCH_PROVIDER override,
+    then Serper (simpler setup), then Google Custom Search."""
+    explicit = os.environ.get("SEARCH_PROVIDER", "").strip().lower()
+    if explicit == "serper":
+        return SerperSearchProvider(session=session)
+    if explicit == "google":
+        return GoogleCustomSearchProvider(session=session)
+    if explicit:
+        raise SearchProviderError(f"SEARCH_PROVIDER='{explicit}' is not supported (use 'serper' or 'google')")
+
+    if os.environ.get("SERPER_API_KEY"):
+        return SerperSearchProvider(session=session)
+    if os.environ.get("GOOGLE_API_KEY") and os.environ.get("GOOGLE_CSE_ID"):
+        return GoogleCustomSearchProvider(session=session)
+    raise SearchProviderError(
+        "No search provider configured. Set SERPER_API_KEY (get one at https://serper.dev — "
+        "simplest to set up) or GOOGLE_API_KEY + GOOGLE_CSE_ID. See .env.example."
+    )
