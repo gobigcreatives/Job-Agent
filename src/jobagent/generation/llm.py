@@ -1,31 +1,70 @@
-"""Thin wrapper around the Anthropic API, used for CV tailoring, cover
-letter generation, and ambiguous-application-question triage. Isolated here
-so those callers don't each need to know how to construct a client.
+"""Thin wrapper around whichever LLM backend is configured, used for CV
+tailoring, cover letter generation, and ambiguous-application-question
+triage. Two backends are supported so a paid Anthropic key is never
+required to run this project:
+
+- Google Gemini (via Google AI Studio, https://aistudio.google.com/apikey)
+  — genuinely free tier, no credit card, generous daily quota for a
+  personal job-search volume of traffic. This is the recommended default.
+- Anthropic (Claude) — used if ANTHROPIC_API_KEY is set, or if
+  LLM_PROVIDER=anthropic is set explicitly.
+
+Set GEMINI_API_KEY (or ANTHROPIC_API_KEY) in .env; whichever is present is
+auto-detected. Set LLM_PROVIDER explicitly to force one when both are set.
 """
 from __future__ import annotations
 
 import os
 
-DEFAULT_MODEL = "claude-sonnet-5"
+_DEFAULT_MODELS = {
+    "gemini": "gemini-2.5-flash",
+    "anthropic": "claude-sonnet-5",
+}
 
 
 class LLMError(RuntimeError):
     pass
 
 
+def _autodetect_provider() -> str:
+    explicit = os.environ.get("LLM_PROVIDER", "").strip().lower()
+    if explicit:
+        if explicit not in _DEFAULT_MODELS:
+            raise LLMError(f"LLM_PROVIDER='{explicit}' is not supported (use 'gemini' or 'anthropic')")
+        return explicit
+    if os.environ.get("GEMINI_API_KEY"):
+        return "gemini"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    raise LLMError(
+        "No LLM configured. Set GEMINI_API_KEY (free — get one at "
+        "https://aistudio.google.com/apikey) or ANTHROPIC_API_KEY in .env. "
+        "See .env.example."
+    )
+
+
 class LLMClient:
-    def __init__(self, api_key: str | None = None, model: str = DEFAULT_MODEL):
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    def __init__(self, provider: str | None = None, api_key: str | None = None, model: str | None = None):
+        self.provider = provider or _autodetect_provider()
+        if self.provider not in _DEFAULT_MODELS:
+            raise LLMError(f"Unsupported LLM provider '{self.provider}' (use 'gemini' or 'anthropic')")
+
+        env_key_name = "GEMINI_API_KEY" if self.provider == "gemini" else "ANTHROPIC_API_KEY"
+        self.api_key = api_key or os.environ.get(env_key_name)
         if not self.api_key:
-            raise LLMError(
-                "ANTHROPIC_API_KEY must be set (see .env.example) to use CV tailoring, "
-                "cover letter generation, or question triage."
-            )
-        self.model = model
-        self._client = None  # lazily constructed — importing anthropic is not free
+            raise LLMError(f"{env_key_name} must be set (see .env.example) to use the '{self.provider}' provider.")
+
+        self.model = model or os.environ.get("LLM_MODEL") or _DEFAULT_MODELS[self.provider]
+        self._client = None  # lazily constructed — importing the SDK is not free
 
     def _ensure_client(self):
-        if self._client is None:
+        if self._client is not None:
+            return self._client
+        if self.provider == "gemini":
+            from google import genai
+
+            self._client = genai.Client(api_key=self.api_key)
+        else:
             from anthropic import Anthropic
 
             self._client = Anthropic(api_key=self.api_key)
@@ -33,6 +72,16 @@ class LLMClient:
 
     def complete(self, system: str, prompt: str, max_tokens: int = 2000) -> str:
         client = self._ensure_client()
+        if self.provider == "gemini":
+            from google.genai import types
+
+            response = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(system_instruction=system, max_output_tokens=max_tokens),
+            )
+            return (response.text or "").strip()
+
         response = client.messages.create(
             model=self.model,
             max_tokens=max_tokens,

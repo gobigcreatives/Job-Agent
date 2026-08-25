@@ -57,13 +57,30 @@ refuses to start if either is removed from the blocked list.
 | Variable | Used for | Required for |
 |---|---|---|
 | `GOOGLE_API_KEY`, `GOOGLE_CSE_ID` | Google Programmable Search Engine (Custom Search JSON API) | discovery |
-| `ANTHROPIC_API_KEY` | CV tailoring, cover letters, open-ended question answers | applying |
+| `GEMINI_API_KEY` **or** `ANTHROPIC_API_KEY` | CV tailoring, cover letters, open-ended question answers | applying |
 | `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD`/`SMTP_FROM_EMAIL` | emailing a hiring contact directly, when a listing asks for that instead of a form | the rare email-apply path |
 
-Create the Google Programmable Search Engine at
-https://programmablesearchengine.google.com/ configured to **search the
-entire web** (not restricted to specific sites) — restricting it defeats
-the point of discovering arbitrary company career pages.
+**Google Search setup** — two separate things, both free:
+1. Create a search engine at https://programmablesearchengine.google.com/
+   and turn its **"Search the entire web"** control ON (not restricted to
+   specific sites — restricting it defeats the point of discovering
+   arbitrary company career pages). Copy its **Search engine ID** into
+   `GOOGLE_CSE_ID`.
+2. Create an API key at https://console.cloud.google.com/apis/credentials
+   -> **Create Credentials -> API key**. On the key's settings page, under
+   **"Select API restrictions"**, choose **Custom Search API** from the
+   dropdown (search for it if it's not listed yet) and save — that's the
+   only API this key needs access to. Copy the key into `GOOGLE_API_KEY`.
+   Free tier: 100 searches/day; beyond that it's billed per query, so this
+   is the one piece with a usage-based cost if you run a very high search
+   volume.
+
+**LLM setup — no paid API required.** By default use **Gemini**, which is
+free with no credit card: get a key at https://aistudio.google.com/apikey
+and set `GEMINI_API_KEY`. The free tier's daily quota comfortably covers a
+personal job search's volume of CV/cover-letter generations. Only set
+`ANTHROPIC_API_KEY` instead if you'd specifically rather pay for Claude —
+whichever variable is set is used automatically.
 
 ## Usage
 
