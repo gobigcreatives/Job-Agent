@@ -6,10 +6,26 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-if ! command -v python3 &>/dev/null; then
-  echo "Python 3.11+ is required but wasn't found. Install it from https://www.python.org/downloads/ and re-run this script."
+# Macs ship an old built-in `python3` (often 3.9) that this project can't
+# use. Look for a real 3.11+ interpreter under any common name rather than
+# assuming plain `python3` is new enough.
+PYTHON_BIN=""
+for candidate in python3.13 python3.12 python3.11 python3; do
+  if command -v "$candidate" &>/dev/null; then
+    if "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+      PYTHON_BIN="$candidate"
+      break
+    fi
+  fi
+done
+
+if [ -z "$PYTHON_BIN" ]; then
+  echo "Python 3.11+ is required but wasn't found (only an older python3 is installed)."
+  echo "Install it from https://www.python.org/downloads/ (download the macOS installer,"
+  echo "run it like any other app), then run this script again."
   exit 1
 fi
+echo "==> Using $($PYTHON_BIN --version) ($PYTHON_BIN)"
 
 if [ ! -f .env ]; then
   echo "No .env file found in this folder. Copy your .env (with your API keys) here first."
@@ -24,9 +40,14 @@ fi
 # a global `pip`/`playwright`/`jobagent` command being on PATH (which
 # varies a lot between machines and is a common source of "command not
 # found" errors, especially on Mac).
+if [ -d .venv ] && ! .venv/bin/python -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+  echo "==> Removing an existing .venv that was built with too old a Python..."
+  rm -rf .venv
+fi
+
 if [ ! -d .venv ]; then
   echo "==> Setting up a private Python environment in .venv (first run only)..."
-  python3 -m venv .venv
+  "$PYTHON_BIN" -m venv .venv
 fi
 
 PY=".venv/bin/python"
