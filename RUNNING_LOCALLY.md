@@ -34,28 +34,31 @@ Then copy your `.env` file (your API keys) and `config/profile.yaml`,
 folder — these were never pushed to GitHub on purpose (they're personal),
 so they need to be copied in separately from wherever you saved them.
 
-## 4. Install everything (one-time, needs internet)
+## 4. Install and run — one command
+
+```bash
+bash run.sh
+```
+
+This installs everything it needs (first time only takes a minute or two)
+and then runs a **dry run**: it discovers and scores jobs but doesn't
+apply to anything, so it's safe to run as many times as you like.
+
+When you're happy with the matches it's finding, run it for real — this
+lets it actually tailor CVs, generate cover letters, and apply to strong
+matches:
+
+```bash
+bash run.sh --live
+```
+
+If `bash` isn't recognized (some Windows setups), run the two commands
+inside it manually instead:
 
 ```bash
 pip install -e ".[dev]"
 playwright install chromium
-```
-
-If `pip` isn't recognized, try `pip3` instead.
-
-## 5. Run it
-
-```bash
 jobagent run --dry-run
-```
-
-This discovers and scores jobs but doesn't apply to anything — it's safe
-to run as many times as you like. When you're happy with the matches it's
-finding, drop `--dry-run` to let it actually tailor CVs, generate cover
-letters, and apply:
-
-```bash
-jobagent run
 ```
 
 ## Other useful commands
