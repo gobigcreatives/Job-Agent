@@ -27,11 +27,31 @@ def _clamp(value: float) -> float:
     return max(0.0, min(100.0, value))
 
 
+_SKILL_SPLIT_PATTERN = re.compile(r"[,&/()]| and ", re.IGNORECASE)
+_MIN_SKILL_FRAGMENT_LEN = 3
+
+
+def _skill_fragments(skill: str) -> list[str]:
+    """Splits a skill entry into its meaningful sub-phrases, e.g.
+    "Paid social (Meta Ads, LinkedIn Ads)" -> ["paid social", "meta ads",
+    "linkedin ads"]. Profile skills are often written as compound,
+    human-readable phrases with parenthetical examples — matching the
+    fragments (rather than requiring the whole phrase verbatim) is what
+    lets a job description mentioning just "Meta Ads" still count as a
+    match for that skill."""
+    parts = _SKILL_SPLIT_PATTERN.split(skill)
+    return [p.strip() for p in parts if len(p.strip()) >= _MIN_SKILL_FRAGMENT_LEN]
+
+
 def _skills_match(job: JobListing, profile: Profile) -> float:
     if not profile.skills:
         return 50.0
     haystack = _normalize(f"{job.title} {job.description}")
-    hits = sum(1 for skill in profile.skills if _normalize(skill) in haystack)
+    hits = 0
+    for skill in profile.skills:
+        fragments = _skill_fragments(skill) or [skill]
+        if any(_normalize(fragment) in haystack for fragment in fragments):
+            hits += 1
     return _clamp(100.0 * hits / len(profile.skills))
 
 

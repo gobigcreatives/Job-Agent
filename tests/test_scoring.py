@@ -1,5 +1,5 @@
 from jobagent.models import JobListing, MatchBand
-from jobagent.scoring.matcher import score_job
+from jobagent.scoring.matcher import _skill_fragments, _skills_match, score_job
 
 
 def _job(**overrides) -> JobListing:
@@ -70,6 +70,38 @@ def test_weights_are_applied(profile, preferences):
         sum(getattr(result, factor) * weight for factor, weight in weights.items()), 1
     )
     assert result.total == expected_total
+
+
+def test_skill_fragments_splits_compound_phrase():
+    fragments = _skill_fragments("Paid social (Meta Ads, LinkedIn Ads, Twitter/X Ads, Google Ads)")
+    assert "paid social" in fragments or "Paid social" in fragments
+    assert "Meta Ads" in fragments
+    assert "LinkedIn Ads" in fragments
+    assert "Google Ads" in fragments
+
+
+def test_skill_fragments_splits_ampersand():
+    fragments = _skill_fragments("Analytics & reporting")
+    assert "Analytics" in fragments
+    assert "reporting" in fragments
+
+
+def test_skills_match_hits_on_partial_compound_skill(profile):
+    from jobagent.config import Profile
+
+    compound_profile = Profile(
+        name="Test", email="t@example.com", phone="0", location="London",
+        work_authorization="x", resume_text_path="x",
+        skills=["Paid social (Meta Ads, LinkedIn Ads, Twitter/X Ads, Google Ads)"],
+    )
+    job_with_fragment_only = JobListing(
+        source_url="https://x.com/1", title="Role",
+        description="We need someone experienced running Meta Ads campaigns daily.",
+    )
+    # Old behaviour required the *entire* compound phrase verbatim in the
+    # description, which real job postings never contain — this is the bug
+    # that caused every real job to score near-zero on skills.
+    assert _skills_match(job_with_fragment_only, compound_profile) > 0
 
 
 def test_band_thresholds(profile, preferences):
