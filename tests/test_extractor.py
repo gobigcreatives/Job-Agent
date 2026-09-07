@@ -52,3 +52,31 @@ def test_falls_back_to_heuristics_without_json_ld():
     assert "Content Manager" in job.title
     assert len(job.description) > 0
     assert job.remote_type == "hybrid"
+
+
+def test_heuristic_extracts_company_from_title_suffix():
+    job = extract_job_details("https://company.example/careers/content-manager", PLAIN_HTML_PAGE)
+    assert job.company == "Acme"
+
+
+def test_heuristic_prefers_og_site_name_for_company():
+    page = """
+    <html><head>
+    <meta property="og:site_name" content="Beta Widgets Ltd">
+    <title>Paid Social Manager | Beta Careers Portal</title>
+    </head><body><h1>Paid Social Manager</h1><p>Great role with paid social work.</p></body></html>
+    """
+    job = extract_job_details("https://beta.example/jobs/1", page)
+    assert job.company == "Beta Widgets Ltd"
+
+
+def test_heuristic_no_company_when_title_has_no_separator():
+    page = "<html><head><title>Paid Social Manager</title></head><body><h1>Paid Social Manager</h1><p>x</p></body></html>"
+    job = extract_job_details("https://x.example/jobs/1", page)
+    assert job.company == ""
+
+
+def test_heuristic_skips_generic_title_segments():
+    page = "<html><head><title>Content Manager - Careers</title></head><body><h1>Content Manager</h1><p>x</p></body></html>"
+    job = extract_job_details("https://x.example/jobs/1", page)
+    assert job.company == ""

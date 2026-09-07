@@ -141,13 +141,48 @@ def _from_json_ld(posting: dict, url: str) -> JobListing:
     )
 
 
+_TITLE_SEPARATOR_PATTERN = re.compile(r"\s+(?:at|@|-|–|—|\|)\s+")
+_GENERIC_TITLE_SEGMENTS = {"jobs", "careers", "job search", "vacancies", "home", "indeed", "linkedin"}
+
+
+def _guess_company(soup: BeautifulSoup) -> str:
+    """Best-effort company name when there's no structured JobPosting data.
+    Prefers `og:site_name` (usually the employer's own brand on an ATS
+    page); falls back to splitting the <title> tag on common separators
+    ("Job Title at Company", "Job Title - Company", "Job Title | Company")
+    and taking the last non-generic segment. Returns "" rather than a
+    guess when nothing reliable is found — an empty company is more
+    honest than a wrong one."""
+    site_name = soup.find("meta", attrs={"property": "og:site_name"})
+    if site_name and site_name.get("content", "").strip():
+        return site_name["content"].strip()
+
+    title_tag = soup.find("title")
+    if title_tag:
+        segments = [s.strip() for s in _TITLE_SEPARATOR_PATTERN.split(title_tag.get_text()) if s.strip()]
+        for segment in reversed(segments[1:]):
+            if segment.lower() not in _GENERIC_TITLE_SEGMENTS and len(segment) <= 60:
+                return segment
+    return ""
+
+
 def _from_heuristics(soup: BeautifulSoup, url: str) -> JobListing:
-    title_tag = soup.find(["h1"]) or soup.find("title")
-    title = title_tag.get_text(strip=True) if title_tag else ""
+    h1_tag = soup.find("h1")
+    if h1_tag:
+        title = h1_tag.get_text(strip=True)
+    else:
+        title_tag = soup.find("title")
+        raw_title = title_tag.get_text(strip=True) if title_tag else ""
+        # A bare <title> is often "Job Title at Company | Job Board" — take
+        # just the first segment so the job title doesn't carry the
+        # company/site name along with it.
+        segments = [s.strip() for s in _TITLE_SEPARATOR_PATTERN.split(raw_title) if s.strip()]
+        title = segments[0] if segments else raw_title
     meta_desc = soup.find("meta", attrs={"name": "description"})
     description = _strip_html(str(soup.find("body"))) if soup.find("body") else ""
     if not description and meta_desc:
         description = meta_desc.get("content", "")
+    company = _guess_company(soup)
 
     remote_type = "office"
     if _REMOTE_PATTERN.search(description[:3000]):
@@ -158,6 +193,7 @@ def _from_heuristics(soup: BeautifulSoup, url: str) -> JobListing:
     return JobListing(
         source_url=url,
         title=title,
+        company=company,
         description=description[:20000],
         remote_type=remote_type,
     )
